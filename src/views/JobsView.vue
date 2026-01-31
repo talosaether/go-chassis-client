@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { jobsApi } from '@/api/client'
-import type { Job } from '@/types'
+import type { Job, JobStatus } from '@/types'
 
 const jobs = ref<Job[]>([])
 const isLoading = ref(false)
 const error = ref('')
+const statusFilter = ref<JobStatus>('all')
 
 const jobType = ref('')
 const jobData = ref('')
@@ -18,7 +19,7 @@ async function fetchJobs() {
   error.value = ''
 
   try {
-    const result = await jobsApi.list()
+    const result = await jobsApi.list(statusFilter.value)
     jobs.value = Array.isArray(result) ? result : []
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to fetch jobs'
@@ -26,6 +27,11 @@ async function fetchJobs() {
   } finally {
     isLoading.value = false
   }
+}
+
+function setFilter(status: JobStatus) {
+  statusFilter.value = status
+  fetchJobs()
 }
 
 async function handleEnqueue() {
@@ -104,15 +110,52 @@ onMounted(fetchJobs)
     </div>
 
     <div class="bg-white rounded-lg shadow">
-      <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 class="text-lg font-semibold text-gray-800">Pending Jobs</h2>
-        <button
-          @click="fetchJobs"
-          :disabled="isLoading"
-          class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50"
-        >
-          {{ isLoading ? 'Loading...' : 'Refresh' }}
-        </button>
+      <div class="p-4 border-b border-gray-200">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Jobs</h2>
+          <button
+            @click="fetchJobs"
+            :disabled="isLoading"
+            class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50"
+          >
+            {{ isLoading ? 'Loading...' : 'Refresh' }}
+          </button>
+        </div>
+        <div class="flex space-x-1">
+          <button
+            @click="setFilter('all')"
+            :class="[
+              'px-4 py-2 text-sm font-medium rounded-md',
+              statusFilter === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ]"
+          >
+            All
+          </button>
+          <button
+            @click="setFilter('pending')"
+            :class="[
+              'px-4 py-2 text-sm font-medium rounded-md',
+              statusFilter === 'pending'
+                ? 'bg-yellow-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ]"
+          >
+            Pending
+          </button>
+          <button
+            @click="setFilter('completed')"
+            :class="[
+              'px-4 py-2 text-sm font-medium rounded-md',
+              statusFilter === 'completed'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ]"
+          >
+            Completed
+          </button>
+        </div>
       </div>
 
       <div v-if="isLoading && jobs.length === 0" class="p-8 text-center text-gray-600">
@@ -124,7 +167,7 @@ onMounted(fetchJobs)
       </div>
 
       <div v-else-if="jobs.length === 0" class="p-8 text-center text-gray-600">
-        No pending jobs.
+        No {{ statusFilter === 'all' ? '' : statusFilter }} jobs.
       </div>
 
       <div v-else class="divide-y divide-gray-200">
@@ -137,8 +180,15 @@ onMounted(fetchJobs)
             <p class="text-gray-800 font-medium">{{ job.type }}</p>
             <p class="text-sm text-gray-500">ID: {{ job.id }}</p>
           </div>
-          <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-            Pending
+          <span
+            :class="[
+              'px-3 py-1 rounded-full text-sm',
+              job.status === 'completed'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-yellow-100 text-yellow-800'
+            ]"
+          >
+            {{ job.status === 'completed' ? 'Completed' : 'Pending' }}
           </span>
         </div>
       </div>

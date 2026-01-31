@@ -77,11 +77,11 @@ export const cacheApi = {
 }
 
 export const jobsApi = {
-  list: () =>
-    api<{ id: string; type: string }[]>('/jobs'),
+  list: (status: 'all' | 'pending' | 'completed' = 'all') =>
+    api<{ id: string; type: string; status: string }[]>(`/jobs?status=${status}`),
 
   enqueue: (type: string, data: string) =>
-    api('/jobs', { method: 'POST', body: { type, data } }),
+    api<{ id: string; type: string; status: string }>('/jobs', { method: 'POST', body: { type, data } }),
 }
 
 export const emailApi = {

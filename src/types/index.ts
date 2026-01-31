@@ -20,9 +20,12 @@ export interface OrgMember {
   role: string
 }
 
+export type JobStatus = 'pending' | 'completed' | 'all'
+
 export interface Job {
   id: string
   type: string
+  status: 'pending' | 'completed'
 }
 
 export interface CacheEntry {
