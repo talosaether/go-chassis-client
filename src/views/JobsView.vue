@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { jobsApi } from '@/api/client'
 import type { Job, JobStatus } from '@/types'
 
@@ -56,7 +56,19 @@ async function handleEnqueue() {
   }
 }
 
-onMounted(fetchJobs)
+const REFRESH_INTERVAL = 5000 // 5 seconds
+let refreshTimer: number | undefined
+
+onMounted(() => {
+  fetchJobs()
+  refreshTimer = window.setInterval(fetchJobs, REFRESH_INTERVAL)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+  }
+})
 </script>
 
 <template>
