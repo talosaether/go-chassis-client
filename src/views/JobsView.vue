@@ -20,7 +20,8 @@ async function fetchJobs() {
 
   try {
     const result = await jobsApi.list(statusFilter.value)
-    jobs.value = Array.isArray(result) ? result : []
+    // Reverse to show newest jobs first
+    jobs.value = Array.isArray(result) ? result.reverse() : []
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to fetch jobs'
     jobs.value = []
@@ -171,10 +172,11 @@ onMounted(fetchJobs)
       </div>
 
       <div v-else class="divide-y divide-gray-200">
-        <div
+        <RouterLink
           v-for="job in jobs"
           :key="job.id"
-          class="p-4 flex justify-between items-center"
+          :to="`/jobs/${job.id}`"
+          class="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
         >
           <div>
             <p class="text-gray-800 font-medium">{{ job.type }}</p>
@@ -190,7 +192,7 @@ onMounted(fetchJobs)
           >
             {{ job.status === 'completed' ? 'Completed' : 'Pending' }}
           </span>
-        </div>
+        </RouterLink>
       </div>
     </div>
   </div>

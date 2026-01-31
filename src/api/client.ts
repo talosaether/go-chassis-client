@@ -80,6 +80,9 @@ export const jobsApi = {
   list: (status: 'all' | 'pending' | 'completed' = 'all') =>
     api<{ id: string; type: string; status: string }[]>(`/jobs?status=${status}`),
 
+  get: (id: string) =>
+    api<{ id: string; type: string; status: string }>(`/jobs/${id}`),
+
   enqueue: (type: string, data: string) =>
     api<{ id: string; type: string; status: string }>('/jobs', { method: 'POST', body: { type, data } }),
 }
