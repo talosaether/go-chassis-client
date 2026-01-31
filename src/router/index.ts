@@ -45,8 +45,13 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
+
+  // Wait for initial session check to complete
+  if (!authStore.isReady) {
+    await authStore.waitUntilReady()
+  }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
