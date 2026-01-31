@@ -44,6 +44,8 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout(): Promise<void> {
     try {
       await authApi.logout()
+    } catch {
+      // Ignore logout errors - clear local state regardless
     } finally {
       isAuthenticated.value = false
       userId.value = null
