@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { jobsApi } from '@/api/client'
-import type { Job, JobStatus } from '@/types'
+import type { Job, JobStatus, Pagination } from '@/types'
+import PaginationComponent from '@/components/Pagination.vue'
 
 const jobs = ref<Job[]>([])
+const pagination = ref<Pagination | null>(null)
 const isLoading = ref(false)
 const error = ref('')
 const statusFilter = ref<JobStatus>('all')
+const currentPage = ref(1)
+const limit = 20
 
 const jobType = ref('')
 const jobData = ref('')
@@ -19,12 +23,17 @@ async function fetchJobs() {
   error.value = ''
 
   try {
-    const result = await jobsApi.list(statusFilter.value)
-    // Reverse to show newest jobs first
-    jobs.value = Array.isArray(result) ? result.reverse() : []
+    const result = await jobsApi.list({
+      status: statusFilter.value,
+      page: currentPage.value,
+      limit
+    })
+    jobs.value = result.jobs || []
+    pagination.value = result.pagination || null
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to fetch jobs'
     jobs.value = []
+    pagination.value = null
   } finally {
     isLoading.value = false
   }
@@ -32,6 +41,13 @@ async function fetchJobs() {
 
 function setFilter(status: JobStatus) {
   statusFilter.value = status
+  currentPage.value = 1
+  fetchJobs()
+}
+
+function goToPage(page: number) {
+  if (page < 1 || (pagination.value && page > pagination.value.totalPages)) return
+  currentPage.value = page
   fetchJobs()
 }
 
@@ -47,6 +63,7 @@ async function handleEnqueue() {
     enqueueSuccess.value = true
     jobType.value = ''
     jobData.value = ''
+    currentPage.value = 1
     await fetchJobs()
     setTimeout(() => { enqueueSuccess.value = false }, 3000)
   } catch (e) {
@@ -56,7 +73,7 @@ async function handleEnqueue() {
   }
 }
 
-const REFRESH_INTERVAL = 5000 // 5 seconds
+const REFRESH_INTERVAL = 5000
 let refreshTimer: number | undefined
 
 onMounted(() => {
@@ -183,29 +200,47 @@ onUnmounted(() => {
         No {{ statusFilter === 'all' ? '' : statusFilter }} jobs.
       </div>
 
-      <div v-else class="divide-y divide-gray-200">
-        <RouterLink
-          v-for="job in jobs"
-          :key="job.id"
-          :to="`/jobs/${job.id}`"
-          class="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
-        >
-          <div>
-            <p class="text-gray-800 font-medium">{{ job.type }}</p>
-            <p class="text-sm text-gray-500">ID: {{ job.id }}</p>
-          </div>
-          <span
-            :class="[
-              'px-3 py-1 rounded-full text-sm',
-              job.status === 'completed'
-                ? 'bg-green-100 text-green-800'
-                : 'bg-yellow-100 text-yellow-800'
-            ]"
+      <template v-else>
+        <PaginationComponent
+          v-if="pagination && pagination.totalPages > 1"
+          :pagination="pagination"
+          :loading="isLoading"
+          @page="goToPage"
+          class="border-b border-gray-200"
+        />
+
+        <div class="divide-y divide-gray-200">
+          <RouterLink
+            v-for="job in jobs"
+            :key="job.id"
+            :to="`/jobs/${job.id}`"
+            class="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
           >
-            {{ job.status === 'completed' ? 'Completed' : 'Pending' }}
-          </span>
-        </RouterLink>
-      </div>
+            <div>
+              <p class="text-gray-800 font-medium">{{ job.type }}</p>
+              <p class="text-sm text-gray-500">ID: {{ job.id }}</p>
+            </div>
+            <span
+              :class="[
+                'px-3 py-1 rounded-full text-sm',
+                job.status === 'completed'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-yellow-100 text-yellow-800'
+              ]"
+            >
+              {{ job.status === 'completed' ? 'Completed' : 'Pending' }}
+            </span>
+          </RouterLink>
+        </div>
+
+        <PaginationComponent
+          v-if="pagination && pagination.totalPages > 1"
+          :pagination="pagination"
+          :loading="isLoading"
+          @page="goToPage"
+          class="border-t border-gray-200"
+        />
+      </template>
     </div>
   </div>
 </template>

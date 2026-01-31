@@ -76,9 +76,25 @@ export const cacheApi = {
     api('/cache', { method: 'POST', body: { key, value } }),
 }
 
+export interface JobsListParams {
+  status?: 'all' | 'pending' | 'completed'
+  page?: number
+  limit?: number
+}
+
+export interface JobsListResponse {
+  jobs: { id: string; type: string; status: string }[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
 export const jobsApi = {
-  list: (status: 'all' | 'pending' | 'completed' = 'all') =>
-    api<{ id: string; type: string; status: string }[]>(`/jobs?status=${status}`),
+  list: ({ status = 'all', page = 1, limit = 20 }: JobsListParams = {}) =>
+    api<JobsListResponse>(`/jobs?status=${status}&page=${page}&limit=${limit}`),
 
   get: (id: string) =>
     api<{ id: string; type: string; status: string }>(`/jobs/${id}`),

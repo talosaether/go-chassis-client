@@ -7,58 +7,67 @@ describe('jobs api', () => {
   })
 
   describe('list', () => {
-    it('fetches all jobs by default', async () => {
-      const mockJobs = [
-        { id: '1', type: 'email', status: 'pending' },
-        { id: '2', type: 'report', status: 'completed' }
-      ]
+    it('fetches all jobs with default pagination', async () => {
+      const mockResponse = {
+        jobs: [
+          { id: '1', type: 'email', status: 'pending' },
+          { id: '2', type: 'report', status: 'completed' }
+        ],
+        pagination: { page: 1, limit: 20, total: 2, totalPages: 1 }
+      }
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        text: () => Promise.resolve(JSON.stringify(mockJobs))
+        text: () => Promise.resolve(JSON.stringify(mockResponse))
       })
       vi.stubGlobal('fetch', mockFetch)
 
       const result = await jobsApi.list()
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/jobs?status=all',
+        '/api/jobs?status=all&page=1&limit=20',
         expect.objectContaining({ method: 'GET', credentials: 'include' })
       )
-      expect(result).toEqual(mockJobs)
+      expect(result).toEqual(mockResponse)
     })
 
-    it('fetches jobs with pending status filter', async () => {
-      const mockJobs = [{ id: '1', type: 'email', status: 'pending' }]
+    it('fetches jobs with status filter and custom pagination', async () => {
+      const mockResponse = {
+        jobs: [{ id: '1', type: 'email', status: 'pending' }],
+        pagination: { page: 2, limit: 10, total: 15, totalPages: 2 }
+      }
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        text: () => Promise.resolve(JSON.stringify(mockJobs))
+        text: () => Promise.resolve(JSON.stringify(mockResponse))
       })
       vi.stubGlobal('fetch', mockFetch)
 
-      const result = await jobsApi.list('pending')
+      const result = await jobsApi.list({ status: 'pending', page: 2, limit: 10 })
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/jobs?status=pending',
+        '/api/jobs?status=pending&page=2&limit=10',
         expect.objectContaining({ method: 'GET' })
       )
-      expect(result).toEqual(mockJobs)
+      expect(result).toEqual(mockResponse)
     })
 
-    it('fetches jobs with completed status filter', async () => {
-      const mockJobs = [{ id: '2', type: 'report', status: 'completed' }]
+    it('fetches completed jobs', async () => {
+      const mockResponse = {
+        jobs: [{ id: '2', type: 'report', status: 'completed' }],
+        pagination: { page: 1, limit: 20, total: 1, totalPages: 1 }
+      }
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        text: () => Promise.resolve(JSON.stringify(mockJobs))
+        text: () => Promise.resolve(JSON.stringify(mockResponse))
       })
       vi.stubGlobal('fetch', mockFetch)
 
-      const result = await jobsApi.list('completed')
+      const result = await jobsApi.list({ status: 'completed' })
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/jobs?status=completed',
+        '/api/jobs?status=completed&page=1&limit=20',
         expect.objectContaining({ method: 'GET' })
       )
-      expect(result).toEqual(mockJobs)
+      expect(result).toEqual(mockResponse)
     })
   })
 

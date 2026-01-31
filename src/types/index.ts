@@ -28,6 +28,18 @@ export interface Job {
   status: 'pending' | 'completed'
 }
 
+export interface Pagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export interface JobsResponse {
+  jobs: Job[]
+  pagination: Pagination
+}
+
 export interface CacheEntry {
   key: string
   value: string
